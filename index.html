@@ -3,17 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>슬먹기 - 명약 같은 급식 추천 서비스</title>
+  <title>슬먹기 - 밝은 학교 게시판 급식 분석기</title>
+  <!-- Tesseract.js (이미지 OCR 텍스트 인식 라이브러리) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
-      --primary: #4f46e5;
-      --primary-hover: #4338ca;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --text-main: #0f172a;
-      --text-sub: #64748b;
-      --border: #e2e8f0;
-      --accent: #10b981;
+      --bg-wood-light: #f5ebe1;    /* 밝은 연갈색 배경 */
+      --wood-border: #bcaaa4;       /* 따뜻한 나무 테두리 연갈색 */
+      --wood-dark: #795548;         /* 짙은 연갈색 포인트 */
+      --point-green: #4caf50;       /* 메인 연두색 */
+      --point-green-dark: #388e3c;  /* 진한 연두색 (버튼 그림자 등) */
+      --soft-green-bg: #e8f5e9;     /* 아주 연한 연두색 배경 */
+      --paper-white: #ffffff;       /* 화이트 메모지 */
+      --accent-yellow: #fbc02d;     /* 포인트 노란색 */
+      --text-main: #3e2723;         /* 짙은 갈색 텍스트 */
+      --text-sub: #6d4c41;          /* 중간 갈색 텍스트 */
     }
 
     * {
@@ -24,221 +28,328 @@
     }
 
     body {
-      background-color: var(--bg);
+      background-color: #f7f3ed;
+      background-image: radial-gradient(#d7ccc8 1.5px, transparent 1.5px);
+      background-size: 20px 20px;
       color: var(--text-main);
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      padding: 20px;
+      padding: 15px;
     }
 
-    .container {
+    /* 학교 코르크 게시판 컨테이너 (밝은 연갈색 & 연두색 조합) */
+    .board-container {
       width: 100%;
-      max-width: 500px;
-      background: var(--card-bg);
+      max-width: 480px;
+      background: var(--bg-wood-light);
       border-radius: 24px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-      padding: 32px 24px;
-      transition: all 0.3s ease;
+      box-shadow: 0 12px 28px rgba(109, 76, 65, 0.15);
+      padding: 28px 20px 20px 20px;
+      border: 6px solid var(--wood-border);
+      position: relative;
+    }
+
+    /* 상단 학교 게시판 핀 상자 */
+    .board-container::before {
+      content: '📌 우리학교 급식 게시판';
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--point-green);
+      color: #ffffff;
+      padding: 4px 18px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      border-radius: 12px;
+      box-shadow: 0 3px 0 var(--point-green-dark);
     }
 
     header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-top: 6px;
+      margin-bottom: 20px;
+      background: var(--paper-white);
+      padding: 16px;
+      border-radius: 18px;
+      border: 2px solid var(--wood-border);
+      box-shadow: 0 4px 0 var(--wood-border);
     }
 
     header h1 {
-      font-size: 1.8rem;
-      color: var(--primary);
-      margin-bottom: 6px;
-      font-weight: 800;
+      font-size: 1.7rem;
+      color: var(--point-green);
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
     header p {
-      font-size: 0.95rem;
-      color: var(--text-sub);
-      word-break: keep-all;
-    }
-
-    .step {
-      display: none;
-    }
-
-    .step.active {
-      display: block;
-    }
-
-    .step-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-      color: var(--text-main);
-    }
-
-    .step-desc {
       font-size: 0.85rem;
       color: var(--text-sub);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .step { display: none; }
+    .step.active { display: block; }
+
+    .step-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      color: var(--wood-dark);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-title::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 16px;
+      background-color: var(--point-green);
+      border-radius: 4px;
+    }
+
+    /* 카메라 / 이미지 업로드 섹션 */
+    .upload-box {
+      background: var(--paper-white);
+      border: 2px dashed var(--point-green);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
       margin-bottom: 16px;
     }
 
-    textarea {
+    .file-input { display: none; }
+
+    .btn-cam {
+      background: var(--point-green);
+      color: white;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-block;
+      box-shadow: 0 3px 0 var(--point-green-dark);
+      transition: all 0.1s;
+    }
+
+    .btn-cam:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--point-green-dark);
+    }
+
+    .preview-img {
+      max-width: 100%;
+      max-height: 160px;
+      border-radius: 12px;
+      margin-top: 10px;
+      border: 2px solid var(--wood-border);
+      display: none;
+    }
+
+    /* 폼 입력창 */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--wood-dark);
+    }
+
+    input[type="date"], textarea {
       width: 100%;
-      height: 110px;
-      padding: 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 14px;
-      resize: none;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 2px solid var(--wood-border);
       font-size: 0.95rem;
       outline: none;
-      transition: border-color 0.2s;
+      background: var(--paper-white);
+      color: var(--text-main);
     }
 
-    textarea:focus {
-      border-color: var(--primary);
+    input[type="date"]:focus, textarea:focus {
+      border-color: var(--point-green);
     }
 
+    textarea {
+      height: 80px;
+      resize: none;
+    }
+
+    /* 아침 식사 라디오 상자 */
+    .breakfast-box {
+      background: var(--paper-white);
+      border: 2px solid var(--wood-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+
+    .breakfast-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+    }
+
+    .breakfast-options {
+      display: flex;
+      gap: 10px;
+    }
+
+    .breakfast-option {
+      flex: 1;
+      padding: 9px;
+      text-align: center;
+      background: #f9f9f9;
+      border: 2px solid var(--wood-border);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+      transition: all 0.2s;
+    }
+
+    .breakfast-option.selected {
+      background: var(--soft-green-bg);
+      border-color: var(--point-green);
+      color: var(--point-green-dark);
+    }
+
+    /* 카테고리 그리드 */
     .category-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .category-btn {
-      padding: 12px;
-      border: 1.5px solid var(--border);
+      padding: 12px 8px;
       border-radius: 12px;
-      background: #fff;
-      font-weight: 600;
+      border: 2px solid var(--wood-border);
+      background: var(--paper-white);
+      color: var(--text-main);
       cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 700;
       transition: all 0.2s;
-      text-align: center;
     }
 
     .category-btn.selected {
-      border-color: var(--primary);
-      background-color: #eeef2;
-      color: var(--primary);
-      box-shadow: 0 0 0 1px var(--primary);
+      background: var(--soft-green-bg);
+      border-color: var(--point-green);
+      color: var(--point-green-dark);
+      box-shadow: inset 0 0 0 1px var(--point-green);
     }
 
+    /* 개별 메뉴 카드 */
     .menu-item {
-      background: #f8fafc;
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 14px;
+      background: var(--paper-white);
+      border: 2px solid var(--wood-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
     }
 
     .menu-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .menu-title {
-      font-weight: 700;
-      font-size: 1.05rem;
-    }
-
-    .badge-group {
-      display: flex;
-      gap: 6px;
+      margin-bottom: 8px;
+      font-weight: 800;
+      font-size: 0.95rem;
     }
 
     .badge {
       font-size: 0.75rem;
-      padding: 4px 8px;
-      border-radius: 20px;
-      font-weight: 600;
+      background: #fff9c4;
+      color: #f57f17;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid #fff59d;
     }
 
-    .badge-nutrient {
-      background-color: #e0e7ff;
-      color: var(--primary);
-    }
-
-    .badge-pref {
-      background-color: #d1fae5;
-      color: #047857;
-    }
-
-    .score-control {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .score-control input[type="range"] {
-      flex: 1;
-      accent-color: var(--primary);
-    }
-
-    .score-val {
-      font-weight: 700;
-      width: 45px;
-      text-align: right;
-      color: var(--primary);
-    }
-
+    /* 메인 버튼 */
     .btn {
       width: 100%;
-      padding: 16px;
-      background-color: var(--primary);
+      padding: 14px;
+      background-color: var(--point-green);
       color: white;
       border: none;
       border-radius: 14px;
       font-size: 1.05rem;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
-      margin-top: 10px;
-      transition: background-color 0.2s;
+      box-shadow: 0 4px 0 var(--point-green-dark);
+      transition: all 0.1s;
     }
 
-    .btn:hover {
-      background-color: var(--primary-hover);
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 var(--point-green-dark);
     }
 
+    /* 분석 스피너 */
     .loading-box {
       text-align: center;
-      padding: 40px 0;
+      padding: 35px 0;
     }
 
     .spinner {
-      width: 48px;
-      height: 48px;
-      border: 5px solid var(--border);
-      border-top: 5px solid var(--primary);
+      width: 44px;
+      height: 44px;
+      border: 4px solid var(--wood-border);
+      border-top: 4px solid var(--point-green);
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
+      margin: 0 auto 16px;
     }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    .result-box {
+    /* 결과 메모지 디자인 */
+    .result-paper {
+      background: var(--paper-white);
+      color: var(--text-main);
+      padding: 22px;
+      border-radius: 18px;
+      border: 2px solid var(--wood-border);
+      box-shadow: 0 6px 16px rgba(109, 76, 65, 0.1);
       text-align: center;
     }
 
     .score-display {
-      font-size: 3.2rem;
+      font-size: 3.6rem;
       font-weight: 900;
-      color: var(--primary);
-      margin: 8px 0;
+      color: var(--point-green);
+      text-shadow: 2px 2px 0px var(--soft-green-bg);
+      margin: 4px 0;
     }
 
     .score-breakdown {
-      background: #f1f5f9;
-      border-radius: 12px;
-      padding: 14px;
-      margin: 16px 0;
-      font-size: 0.85rem;
       text-align: left;
+      font-size: 0.85rem;
+      margin: 16px 0;
+      background: #fafafa;
+      border: 1px solid var(--wood-border);
+      border-radius: 12px;
+      padding: 12px;
     }
 
     .breakdown-row {
@@ -250,84 +361,96 @@
     .breakdown-row:last-child {
       margin-bottom: 0;
     }
-
-    .result-msg {
-      font-size: 1.2rem;
-      font-weight: 800;
-      margin-bottom: 24px;
-      word-break: keep-all;
-    }
-
-    .status-eat { color: #059669; }
-    .status-choice { color: #d97706; }
-    .status-pass { color: #dc2626; }
   </style>
 </head>
 <body>
 
-<div class="container">
+<div class="board-container">
   <header>
-    <h1>🍱 슬먹기</h1>
-    <p>단순 맛뿐만 아니라 영양분까지 고려하는 명약 급식 추천</p>
+    <h1>🍱 오늘 뭐 먹지?</h1>
+    <p>밝고 건강한 식단을 위한 급식표 촬영 & 분석 서비스</p>
   </header>
 
-  <!-- STEP 1: 오늘 급식표 입력 -->
+  <!-- STEP 1: 카메라 촬영 / 날짜 선택 / 급식표 입력 -->
   <div id="step1" class="step active">
-    <div class="step-title">STEP 1. 오늘 급식표 입력</div>
-    <div class="step-desc">오늘 나올 급식 메뉴를 입력해 주세요.</div>
-    <textarea id="menuInput" placeholder="예: 쌀밥, 제육볶음, 된장찌개, 배추김치, 요구르트"></textarea>
-    <button class="btn" onclick="processStep1()">선호 종류 선택하기</button>
+    <div class="step-title">STEP 1. 급식표 촬영 및 날짜 선택</div>
+    
+    <div class="upload-box">
+      <p style="font-size:0.85rem; color: var(--text-sub); margin-bottom:10px; font-weight: 600;">급식표 사진을 카메라로 찍거나 올려주세요</p>
+      <label class="btn-cam">
+        📸 카메라 촬영 / 이미지 선택
+        <input type="file" class="file-input" accept="image/*" capture="environment" onchange="handleImageUpload(event)">
+      </label>
+      <img id="imagePreview" class="preview-img" alt="급식표 미리보기">
+      <div id="ocrStatus" style="font-size: 0.75rem; color: var(--point-green-dark); margin-top: 6px; font-weight: 700;"></div>
+    </div>
+
+    <div class="form-group">
+      <label for="mealDate">📅 분석할 날짜를 선택하세요:</label>
+      <input type="date" id="mealDate">
+    </div>
+
+    <div class="form-group">
+      <label for="menuInput">✏️ 인식/입력된 급식 메뉴:</label>
+      <textarea id="menuInput" placeholder="사진을 올리시거나 직접 메뉴를 입력해 주세요.&#10;(예: 쌀밥, 제육볶음, 된장찌개, 배추김치, 요구르트)"></textarea>
+    </div>
+
+    <div class="breakfast-box">
+      <div class="breakfast-title">🥣 오늘 아침 식사를 하셨나요?</div>
+      <div class="breakfast-options">
+        <div class="breakfast-option selected" id="opt-eaten" onclick="selectBreakfast(true)">🥣 먹었다</div>
+        <div class="breakfast-option" id="opt-not-eaten" onclick="selectBreakfast(false)">🍳 안 먹었다</div>
+      </div>
+    </div>
+
+    <button class="btn" onclick="processStep1()">좋아하는 음식 종류 선택하기</button>
   </div>
 
-  <!-- STEP 2: 좋아하는 음식 종류 선택 -->
+  <!-- STEP 2: 선호 음식 종류 선택 -->
   <div id="step2" class="step">
-    <div class="step-title">STEP 2. 좋아하는 음식 종류</div>
-    <div class="step-desc">오늘 끌리는 음식 스타일을 모두 선택하세요.</div>
+    <div class="step-title">STEP 2. 좋아하는 음식 종류 선택</div>
     <div class="category-grid">
       <button class="category-btn" onclick="toggleCategory(this, '고기류')">🥩 고기류</button>
       <button class="category-btn" onclick="toggleCategory(this, '국/찌개류')">🍲 국/찌개류</button>
       <button class="category-btn" onclick="toggleCategory(this, '튀김/패스트푸드')">🍟 튀김류</button>
-      <button class="category-btn" onclick="toggleCategory(this, '면류/분식')">떡볶이/면</button>
+      <button class="category-btn" onclick="toggleCategory(this, '면류/분식')">🍝 면/분식류</button>
       <button class="category-btn" onclick="toggleCategory(this, '디저트/음료')">🧃 디저트류</button>
-      <button class="category-btn" onclick="toggleCategory(this, '채소/나물류')">🥗 채소류</button>
+      <button class="category-btn" onclick="toggleCategory(this, '채소/나물류')">🥗 채소/나물류</button>
     </div>
     <button class="btn" onclick="processStep2()">개별 메뉴 점수 입력하기</button>
   </div>
 
-  <!-- STEP 3: 개별 점수 입력 -->
+  <!-- STEP 3: 메뉴별 개별 점수 매기기 -->
   <div id="step3" class="step">
     <div class="step-title">STEP 3. 메뉴별 점수 입력 (5점 만점)</div>
-    <div class="step-desc">AI가 예측한 영양소와 선호도를 확인하고 점수를 매겨주세요.</div>
     <div id="menuList"></div>
-    <button class="btn" onclick="processStep3()">슬먹 분석 시작하기</button>
+    <button class="btn" onclick="processStep3()">급식 분석 시작하기</button>
   </div>
 
-  <!-- STEP 4: AI 분석 중 -->
+  <!-- STEP 4: 분석 중 -->
   <div id="step4" class="step">
     <div class="loading-box">
       <div class="spinner"></div>
-      <div class="step-title">AI 알고리즘이 분석 중입니다...</div>
-      <p style="font-size:0.85rem; color: var(--text-sub);">
-        개별 점수(40점) + 선호 종류(30점) + 영양소(30점) 계산 중
-      </p>
+      <div class="step-title" style="justify-content: center; color: var(--wood-dark);">영양소 및 선호도 분석 중...</div>
+      <p style="font-size:0.85rem; color: var(--text-sub); margin-top: 4px;">선택하신 날짜의 식단 균형도를 평가하고 있습니다.</p>
     </div>
   </div>
 
-  <!-- STEP 5: 최종 결과 결정 -->
+  <!-- STEP 5: 최종 결과판 -->
   <div id="step5" class="step">
-    <div class="result-box">
-      <div class="step-title">STEP 5. 급식 여부 결정</div>
-      <p style="font-size:0.9rem; color:var(--text-sub);">오늘의 슬먹 종합 점수</p>
+    <div class="result-paper">
+      <h3 id="resultDateTitle" style="font-size:1.1rem; color: var(--wood-dark); margin-bottom:8px;">[2026-09-21] 급식 분석 결과</h3>
       <div id="finalScore" class="score-display">0점</div>
       
       <div class="score-breakdown">
         <div class="breakdown-row"><span>음식 개별 점수 (40점 만점):</span><strong id="scorePart1">0점</strong></div>
         <div class="breakdown-row"><span>좋아하는 음식류 (30점 만점):</span><strong id="scorePart2">0점</strong></div>
         <div class="breakdown-row"><span>영양소 균형 점수 (30점 만점):</span><strong id="scorePart3">0점</strong></div>
+        <div class="breakdown-row" id="bonusRow" style="color: #e65100; font-weight:700;"><span>아침 안 먹음 보정:</span><strong id="scoreBonus">+5점 (반영됨)</strong></div>
       </div>
 
-      <div id="resultMsg" class="result-msg"></div>
-      <button class="btn" onclick="resetApp()">다시 입력하기</button>
+      <p id="resultMsg" style="font-size:1.15rem; font-weight:800; margin-bottom:18px; white-space: pre-line; word-break: keep-all;"></p>
+      <button class="btn" onclick="resetApp()">다른 날짜/급식 다시 분석하기</button>
     </div>
   </div>
 </div>
@@ -335,24 +458,62 @@
 <script>
   let parsedMenus = [];
   let selectedCategories = [];
+  let hasEatenBreakfast = true;
 
-  // 영양소 및 종류 데이터베이스 (간이 AI 키워드 매칭)
-  const nutrientDb = {
-    '제육': { nutrient: '단백질', category: '고기류' },
-    '불고기': { nutrient: '단백질', category: '고기류' },
-    '치킨': { nutrient: '지방/단백질', category: '튀김/패스트푸드' },
-    '돈까스': { nutrient: '지방/단백질', category: '튀김/패스트푸드' },
-    '찌개': { nutrient: '나트륨/무기질', category: '국/찌개류' },
-    '국': { nutrient: '수분/무기질', category: '국/찌개류' },
-    '김치': { nutrient: '유산균/비타민', category: '채소/나물류' },
-    '나물': { nutrient: '섬유질/비타민', category: '채소/나물류' },
-    '요구르트': { nutrient: '당류/유산균', category: '디저트/음료' },
-    '음료': { nutrient: '당류', category: '디저트/음료' },
-    '떡볶이': { nutrient: '탄수화물', category: '면류/분식' },
-    '라면': { nutrient: '탄수화물', category: '면류/분식' }
-  };
+  // 오늘 날짜 기본 세팅
+  document.getElementById('mealDate').value = new Date().toISOString().substring(0, 10);
 
-  const defaultNutrients = ['단백질 풍부', '비타민 풍부', '탄수화물', '무기질 풍부', '유산균 함유'];
+  const nutrientDb = [
+    { keywords: ['밥', '떡', '면', '스파게티', '빵', '우동', '짜장', '짬뽕', '카레', '하이라이스'], nutrient: '탄수화물', category: '면류/분식' },
+    { keywords: ['제육', '고기', '불고기', '닭', '치킨', '돈까스', '함박', '계란', '두부', '장조림', '오징어', '너겟', '생선', '삼치', '고등어'], nutrient: '단백질', category: '고기류' },
+    { keywords: ['김치', '나물', '샐러드', '무침', '채소', '상추', '야채', '오이', '시금치', '겉절이'], nutrient: '채소류', category: '채소/나물류' },
+    { keywords: ['찌개', '국', '탕', '수프', '스프'], nutrient: '국/수분', category: '국/찌개류' },
+    { keywords: ['요구르트', '우유', '주스', '음료', '푸딩', '과일', '아이스크림', '케이크', '에이드'], nutrient: '디저트', category: '디저트/음료' },
+    { keywords: ['튀김', '탕수육', '핫도그', '감자튀김'], nutrient: '지방', category: '튀김/패스트푸드' }
+  ];
+
+  // 이미지 업로드 및 OCR 텍스트 추출 처리
+  function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const imgPreview = document.getElementById('imagePreview');
+    const statusEl = document.getElementById('ocrStatus');
+    
+    imgPreview.src = URL.createObjectURL(file);
+    imgPreview.style.display = 'block';
+    statusEl.innerText = "⏳ 이미지 텍스트 읽는 중 (OCR Processing)...";
+
+    // Tesseract OCR 실행 (한글 + 영어)
+    Tesseract.recognize(
+      file,
+      'kor+eng',
+      { logger: m => {
+          if(m.status === 'recognizing text') {
+            statusEl.innerText = `⏳ 텍스트 인식 중... (${Math.round(m.progress * 100)}%)`;
+          }
+        } 
+      }
+    ).then(({ data: { text } }) => {
+      statusEl.innerText = "✅ 텍스트 인식 완료!";
+      
+      const cleanedText = text.replace(/[^\w\sㄱ-ㅎㅏ-ㅣ가-힣,]/g, ' ')
+                              .split(/\s+/)
+                              .filter(word => word.length > 1)
+                              .join(', ');
+      
+      document.getElementById('menuInput').value = cleanedText;
+    }).catch(err => {
+      statusEl.innerText = "❌ 텍스트 인식이 원활하지 않습니다. 직접 수정을 진행해 주세요.";
+      console.error(err);
+    });
+  }
+
+  function selectBreakfast(isEaten) {
+    hasEatenBreakfast = isEaten;
+    document.getElementById('opt-eaten').classList.toggle('selected', isEaten);
+    document.getElementById('opt-not-eaten').classList.toggle('selected', !isEaten);
+  }
 
   function toggleCategory(btn, category) {
     btn.classList.toggle('selected');
@@ -364,49 +525,40 @@
   }
 
   function showStep(stepNumber) {
-    document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     document.getElementById(`step${stepNumber}`).classList.add('active');
   }
 
   function processStep1() {
     const input = document.getElementById('menuInput').value.trim();
     if (!input) {
-      alert('오늘의 급식 메뉴를 입력해 주세요!');
+      alert('급식 메뉴를 입력하거나 사진을 업로드해 주세요!');
       return;
     }
 
     const items = input.split(/[,;\n\s]+/).filter(item => item.length > 0);
     
-    parsedMenus = items.map(name => {
-      let matchedNutrient = defaultNutrients[Math.floor(Math.random() * defaultNutrients.length)];
+    parsedMenus = items.map((name, idx) => {
+      let matchedNutrient = '';
       let matchedCategory = '기타';
 
-      // 키워드 자동 매칭
-      for (let key in nutrientDb) {
-        if (name.includes(key)) {
-          matchedNutrient = nutrientDb[key].nutrient;
-          matchedCategory = nutrientDb[key].category;
+      for (let db of nutrientDb) {
+        if (db.keywords.some(kw => name.includes(kw))) {
+          matchedNutrient = db.nutrient;
+          matchedCategory = db.category;
           break;
         }
       }
 
-      return {
-        name: name,
-        score: 3, // 기본 3점 (5점 만점)
-        nutrient: matchedNutrient,
-        category: matchedCategory
-      };
+      if (!matchedNutrient) matchedNutrient = '영양소';
+
+      return { name, score: 3, nutrient: matchedNutrient, category: matchedCategory };
     });
 
     showStep(2);
   }
 
   function processStep2() {
-    renderMenuList();
-    showStep(3);
-  }
-
-  function renderMenuList() {
     const listContainer = document.getElementById('menuList');
     listContainer.innerHTML = '';
 
@@ -415,18 +567,18 @@
       itemEl.className = 'menu-item';
       itemEl.innerHTML = `
         <div class="menu-header">
-          <span class="menu-title">${menu.name}</span>
-          <div class="badge-group">
-            <span class="badge badge-nutrient">${menu.nutrient}</span>
-          </div>
+          <span>${menu.name}</span>
+          <span class="badge">${menu.nutrient}</span>
         </div>
-        <div class="score-control">
-          <input type="range" min="1" max="5" value="${menu.score}" onchange="updateScore(${index}, this.value)">
-          <span class="score-val" id="score-val-${index}">${menu.score}점</span>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <input type="range" min="1" max="5" value="${menu.score}" style="flex:1; accent-color: var(--point-green);" onchange="updateScore(${index}, this.value)">
+          <span id="score-val-${index}" style="font-weight:800; width:40px; text-align:right; color: #e53935;">${menu.score}점</span>
         </div>
       `;
       listContainer.appendChild(itemEl);
     });
+
+    showStep(3);
   }
 
   function updateScore(index, value) {
@@ -438,60 +590,60 @@
     showStep(4);
 
     setTimeout(() => {
-      // 알고리즘 계산 (100점 만점)
-      
-      // 1. 음식 개별 점수 (40점 만점)
-      const avgMenuScore = parsedMenus.reduce((sum, m) => sum + m.score, 0) / parsedMenus.length;
-      const scorePart1 = Math.round((avgMenuScore / 5) * 40);
+      // 1) 개별 음식 점수 (40점 만점)
+      const avgScore = parsedMenus.reduce((sum, m) => sum + m.score, 0) / parsedMenus.length;
+      const scorePart1 = Math.round((avgScore / 5) * 40);
 
-      // 2. 좋아하는 음식류 (30점 만점)
-      let categoryMatchCount = 0;
-      parsedMenus.forEach(m => {
-        if (selectedCategories.includes(m.category)) {
-          categoryMatchCount++;
-        }
-      });
-      let scorePart2 = 15; // 기본점수
-      if (selectedCategories.length > 0) {
-        scorePart2 = Math.min(30, Math.round(15 + (categoryMatchCount * 5)));
+      // 2) 카테고리 선호도 점수 (30점 만점)
+      let matchCount = 0;
+      parsedMenus.forEach(m => { if (selectedCategories.includes(m.category)) matchCount++; });
+      let scorePart2 = selectedCategories.length > 0 
+        ? Math.min(30, Math.round(10 + (matchCount / parsedMenus.length) * 20))
+        : 15;
+
+      // 3) 영양소 균형 점수 (30점 만점)
+      const nutrientTypes = new Set(parsedMenus.map(m => m.nutrient));
+      let coreCount = ['탄수화물', '단백질', '채소류', '국/수분'].filter(n => nutrientTypes.has(n)).length;
+      let scorePart3 = coreCount >= 3 ? 30 : coreCount * 8 + 5;
+
+      // 4) 아침 공복 보정 가산점 (+5점)
+      const bonus = !hasEatenBreakfast ? 5 : 0;
+      const totalScore = Math.min(100, scorePart1 + scorePart2 + scorePart3 + bonus);
+
+      // 결과 출력
+      const dateVal = document.getElementById('mealDate').value;
+      document.getElementById('resultDateTitle').innerText = `[${dateVal}] 급식 분석 결과`;
+      document.getElementById('finalScore').innerText = `${totalScore}점`;
+      document.getElementById('scorePart1').innerText = `${scorePart1}점 / 40점`;
+      document.getElementById('scorePart2').innerText = `${scorePart2}점 / 30점`;
+      document.getElementById('scorePart3').innerText = `${scorePart3}점 / 30점`;
+      
+      const bonusRow = document.getElementById('bonusRow');
+      bonusRow.style.display = !hasEatenBreakfast ? 'flex' : 'none';
+
+      const msgEl = document.getElementById('resultMsg');
+      if (totalScore >= 75) {
+        msgEl.style.color = "#2e7d32";
+        msgEl.innerText = "🍱 강력 추천!\n영양과 맛을 모두 잡은 명약 급식입니다.";
+      } else if (totalScore >= 55) {
+        msgEl.style.color = "#f57f17";
+        msgEl.innerText = "🍙 자율 선택!\n무난한 한 끼, 취향껏 선택하세요.";
+      } else {
+        msgEl.style.color = "#e53935";
+        msgEl.innerText = "🛑 패스 추천!\n오늘은 매점이나 외부 식사를 추천합니다.";
       }
 
-      // 3. 영양소 점수 (30점 만점) - 메뉴 종류의 다양성 기반 산출
-      const uniqueNutrients = new Set(parsedMenus.map(m => m.nutrient)).size;
-      let scorePart3 = Math.min(30, Math.round((uniqueNutrients / parsedMenus.length) * 30 + 10));
-
-      const finalScore = Math.min(100, scorePart1 + scorePart2 + scorePart3);
-
-      displayResult(finalScore, scorePart1, scorePart2, scorePart3);
       showStep(5);
-    }, 1500);
-  }
-
-  function displayResult(totalScore, p1, p2, p3) {
-    document.getElementById('finalScore').innerText = `${totalScore}점`;
-    document.getElementById('scorePart1').innerText = `${p1}점 / 40점`;
-    document.getElementById('scorePart2').innerText = `${p2}점 / 30점`;
-    document.getElementById('scorePart3').innerText = `${p3}점 / 30점`;
-
-    const msgEl = document.getElementById('resultMsg');
-
-    if (totalScore >= 80) {
-      msgEl.className = "result-msg status-eat";
-      msgEl.innerText = "무조건 먹어야 하는 명약 급식! 🍱\n(오늘 급식 강력 추천)";
-    } else if (totalScore >= 60) {
-      msgEl.className = "result-msg status-choice";
-      msgEl.innerText = "무난한 한 끼, 취향껏 선택하세요! 🍙\n(자율 선택 추천)";
-    } else {
-      msgEl.className = "result-msg status-pass";
-      msgEl.innerText = "오늘은 패스하고 다른 메뉴를 추천해요! 🛑\n(매점/도시락 추천)";
-    }
+    }, 1200);
   }
 
   function resetApp() {
     document.getElementById('menuInput').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('ocrStatus').innerText = '';
     selectedCategories = [];
     document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('selected'));
-    parsedMenus = [];
+    selectBreakfast(true);
     showStep(1);
   }
 </script>
